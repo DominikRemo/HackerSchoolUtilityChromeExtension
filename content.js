@@ -35,7 +35,7 @@ function getCSRFToken() {
 }
 
 function deleteProgram(programId, row) {
-    fetch("https://codehs.com/library/ajax/delete_sandbox", {
+    const promis = fetch("https://codehs.com/library/ajax/delete_sandbox", {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -44,6 +44,7 @@ function deleteProgram(programId, row) {
         body: `program=${programId}&method=delete_sandbox`,
     });
     row.remove();
+    return promis
 }
 
 function setupTable(table) {
@@ -71,13 +72,17 @@ function setupTable(table) {
 
     const deleteSelectedButton = createDeleteButton("Delete Selected", () => {
         const selected = tbody.querySelectorAll(".sandbox-checkbox:checked");
+        const promisses = []
         selected.forEach((checkbox) => {
             const row = checkbox.closest("tr");
             if (!row) return;
             const id = row.getAttribute("data-program-id");
             if (!id) return;
-            deleteProgram(Number(id), row);
+            promisses.push(deleteProgram(Number(id), row))
         });
+        Promise.all(promisses).then( () => 
+            window.location.reload()
+        )
     });
     deleteSelectedButton.classList.add("sandbox-delete-button");
     deleteSelectedButton.disabled = true;
