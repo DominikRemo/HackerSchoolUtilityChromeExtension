@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "HackerSchool Utils",
+  "version": "0.1.0",
+  "description": "Utility Chrome Extension für die Hacker School - Bulk Delete für CodeHS",
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "permissions": ["activeTab"],
+  "host_permissions": ["*://*.codehs.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["*://*.codehs.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
