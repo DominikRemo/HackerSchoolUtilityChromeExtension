@@ -14,12 +14,19 @@ function onElementReady(id, callback, interval = 100, timeout = 10000) {
     }, interval);
 }
 
-function createDeleteButton(text = "Delete", onClick) {
+function createDeleteButton(simple, onClick) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "btn btn-danger btn-sm";
     button.style.float = "right";
-    button.innerHTML = `<span class="icon-trash"></span> ${text}`;
+    const spanIcon = document.createElement("span")
+    spanIcon.className= "icon-trash"
+    button.append(spanIcon)
+    if (!simple) {
+        const spanText = document.createElement("span")
+        spanText.textContent = " Delete selected"
+        button.append(spanText)
+    }
     button.addEventListener("click", (e) => {
         e.preventDefault();
         onClick();
@@ -70,7 +77,7 @@ function setupTable(table) {
     selectAllTh.appendChild(selectAllCheckbox);
     headerRow.insertBefore(selectAllTh, headerRow.firstChild);
 
-    const deleteSelectedButton = createDeleteButton("Delete Selected", () => {
+    const deleteSelectedButton = createDeleteButton(false, () => {
         const selected = tbody.querySelectorAll(".sandbox-checkbox:checked");
         const promisses = []
         selected.forEach((checkbox) => {
@@ -121,7 +128,7 @@ function setupTable(table) {
 
         // Add row delete button
         const programId = row.getAttribute("data-program-id");
-        const deleteBtn = createDeleteButton("Delete", () => {
+        const deleteBtn = createDeleteButton(true, () => {
             if (programId !== null) {
                 deleteProgram(Number(programId), row);
             }
