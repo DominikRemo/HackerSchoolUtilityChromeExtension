@@ -1,8 +1,20 @@
 {
   "manifest_version": 3,
   "name": "HackerSchool Utils",
-  "version": "0.1.1",
-  "description": "Utility Chrome Extension für die Hacker School - Bulk Delete für CodeHS",
+  "version": "0.1.2",
+  "description": "Utility Browser Extension für die Hacker School - Bulk Delete für CodeHS",
+  "homepage_url": "https://github.com/DominikRemo/HackerSchoolUtilityChromeExtension/blob/main/manifest.json",
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "CodeHSDelte@hacker-school.de",
+      "update_url": "https://github.com/DominikRemo/HackerSchoolUtilityChromeExtension/blob/main/updates.json",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+
   "icons": {
     "16": "icon.png",
     "48": "icon.png",
