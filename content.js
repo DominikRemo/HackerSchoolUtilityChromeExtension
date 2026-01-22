@@ -77,7 +77,7 @@ function enhanceRow(row, table) {
     const programId = row.getAttribute("data-program-id");
     if ( programId != null) {
         const deleteBtn = createDeleteButton(true, () => {
-            deleteProgram(Number(programId), row);
+            deleteProgram(programId, row);
         })
         deleteTd.appendChild(deleteBtn);
     }
@@ -116,7 +116,7 @@ function setupTable(table) {
             if (!row) return;
             const id = row.getAttribute("data-program-id");
             if (!id) return;
-            promisses.push(deleteProgram(Number(id), row))
+            promisses.push(deleteProgram(id, row))
         });
         Promise.all(promisses).then( () => 
             window.location.reload()
