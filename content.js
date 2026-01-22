@@ -54,6 +54,36 @@ function deleteProgram(programId, row) {
     return promis
 }
 
+function updateDeleteSelectedState(table) {
+    const button = table.querySelector(".sandbox-delete-selected-button") 
+    const anyChecked = table.querySelector(".sandbox-checkbox:checked");
+    button.disabled = !anyChecked;
+}
+
+function enhanceRow(row, table) {
+    if (row.querySelector(".sandbox-checkbox")) return;
+
+    // Add row checkbox
+    const checkboxTd = document.createElement("td");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "sandbox-checkbox";
+    checkbox.addEventListener("change", () => updateDeleteSelectedState(table));
+    checkboxTd.appendChild(checkbox);
+    row.insertBefore(checkboxTd, row.firstChild);
+
+    // Add row delete button
+    const deleteTd = document.createElement("td");
+    const programId = row.getAttribute("data-program-id");
+    if ( programId != null) {
+        const deleteBtn = createDeleteButton(true, () => {
+            deleteProgram(Number(programId), row);
+        })
+        deleteTd.appendChild(deleteBtn);
+    }
+    row.appendChild(deleteTd);
+}
+
 function setupTable(table) {
     if (table.dataset.enhanced === "true") return;
     table.dataset.enhanced = "true";
@@ -77,6 +107,7 @@ function setupTable(table) {
     selectAllTh.appendChild(selectAllCheckbox);
     headerRow.insertBefore(selectAllTh, headerRow.firstChild);
 
+    // Add Delete-Selected button
     const deleteSelectedButton = createDeleteButton(false, () => {
         const selected = tbody.querySelectorAll(".sandbox-checkbox:checked");
         const promisses = []
@@ -91,18 +122,12 @@ function setupTable(table) {
             window.location.reload()
         )
     });
-    deleteSelectedButton.classList.add("sandbox-delete-button");
+    deleteSelectedButton.classList.add("sandbox-delete-selected-button");
     deleteSelectedButton.disabled = true;
     const deleteTh = document.createElement("th");
     deleteTh.style.padding = "0.5rem";
     deleteTh.appendChild(deleteSelectedButton);
     headerRow.appendChild(deleteTh);
-
-    function updateDeleteSelectedState() {
-        if (!tbody) return;
-        const anyChecked = tbody.querySelector(".sandbox-checkbox:checked");
-        deleteSelectedButton.disabled = !anyChecked;
-    }
 
     selectAllCheckbox.addEventListener("change", (e) => {
         const checkboxes = tbody.querySelectorAll(".sandbox-checkbox");
@@ -111,37 +136,13 @@ function setupTable(table) {
         checkboxes.forEach((cb) => {
             cb.checked = target.checked;
         });
-        updateDeleteSelectedState();
+        updateDeleteSelectedState(table);
     });
-
-    function enhanceRow(row) {
-        if (row.querySelector(".sandbox-checkbox")) return;
-
-        // Add individual checkbox
-        const checkboxTd = document.createElement("td");
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.className = "sandbox-checkbox";
-        checkbox.addEventListener("change", updateDeleteSelectedState);
-        checkboxTd.appendChild(checkbox);
-        row.insertBefore(checkboxTd, row.firstChild);
-
-        // Add row delete button
-        const programId = row.getAttribute("data-program-id");
-        const deleteBtn = createDeleteButton(true, () => {
-            if (programId !== null) {
-                deleteProgram(Number(programId), row);
-            }
-        });
-        const deleteTd = document.createElement("td");
-        deleteTd.appendChild(deleteBtn);
-        row.appendChild(deleteTd);
-    }
 
     // Enhance all initial rows
     rows.forEach((row) => {
         if (row !== headerRow) {
-            enhanceRow(row);
+            enhanceRow(row, table);
         }
     });
 }
