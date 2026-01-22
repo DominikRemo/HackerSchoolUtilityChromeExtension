@@ -54,13 +54,13 @@ function deleteProgram(programId, row) {
     return promis
 }
 
-function updateDeleteSelectedState(table) {
-    const button = table.querySelector(".sandbox-delete-selected-button") 
-    const anyChecked = table.querySelector(".sandbox-checkbox:checked");
+function updateDeleteSelectedState(tbody) {
+    const button = tbody.querySelector(".sandbox-delete-selected-button") 
+    const anyChecked = tbody.querySelector(".sandbox-checkbox:checked");
     button.disabled = !anyChecked;
 }
 
-function enhanceRow(row, table) {
+function enhanceRow(row, tbody) {
     if (row.querySelector(".sandbox-checkbox")) return;
 
     // Add row checkbox
@@ -68,7 +68,7 @@ function enhanceRow(row, table) {
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.className = "sandbox-checkbox";
-    checkbox.addEventListener("change", () => updateDeleteSelectedState(table));
+    checkbox.addEventListener("change", () => updateDeleteSelectedState(tbody));
     checkboxTd.appendChild(checkbox);
     row.insertBefore(checkboxTd, row.firstChild);
 
@@ -136,7 +136,7 @@ function setupTable(table) {
         checkboxes.forEach((cb) => {
             cb.checked = target.checked;
         });
-        updateDeleteSelectedState(table);
+        updateDeleteSelectedState(tbody);
     });
 
     // Enhance all initial rows
@@ -147,34 +147,35 @@ function setupTable(table) {
     });
 }
 
-// Main execution - Monitor DOM changes and setup tables when they appear
-(() => {
-    let lastContent = document.documentElement.innerHTML;
-    let debounceTimer;
-    const DEBOUNCE_DELAY_MS = 300;
+// main/setup
+// observer for indiviual tables to an add checkbox and delte button for new entries
+const tableObserver = new MutationObserver((mrl) => {
+    mrl.forEach((record) => {
+        record.addedNodes.forEach((e) => {
+            if (e.nodeName === "TR") enhanceRow(e, record.target)
+        })
+    })
+})
 
-    // Debounce function to avoid checking content too frequently
-    const scheduleContentCheck = () => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(checkAndSetupTables, DEBOUNCE_DELAY_MS);
-    };
-
-    // Observe DOM mutations and trigger debounced check
-    const observer = new MutationObserver(scheduleContentCheck);
-    observer.observe(document.documentElement, {
-        subtree: true,
-        childList: true,
-    });
-
-    // Check if page content changed and setup CodeHS tables if found
-    const checkAndSetupTables = () => {
-        let currentContent = document.documentElement.innerHTML;
-        if (currentContent !== lastContent) {
-            lastContent = currentContent;
-            // Setup bulk delete for both folder and program tables
-            ["sandbox-folder-table", "sandbox-program-table"].forEach((id) => {
-                onElementReady(id, (el) => setupTable(el));
-            });
+// observer for the whole DOM to see when the tables are loaded
+const DOMObserver = new MutationObserver((mrl) => {
+    mrl.forEach((record) => {
+        console.log(record)
+        if(record.target.classList.contains("num-programs")) { // best indicator I could find that works both for the main and folder views
+            document.querySelectorAll("table").forEach((table) => {
+                setupTable(table)
+                tableObserver.observe(table, {subtree: true, childList:true}) // could probably just be part of setupTable
+            })
         }
-    };
-})();
+    })
+})
+
+// edge case when you reload/start inside a folder
+// (for some reason the tables are immediatly part of the DOM and aren't loaded aferwards, like in the main view)
+if (document.querySelector("table"))
+    document.querySelectorAll("table").forEach((table) => {
+        setupTable(table)
+        tableObserver.observe(table, {subtree: true, childList:true})
+    })
+
+DOMObserver.observe(document, {childList:true, subtree:true})
