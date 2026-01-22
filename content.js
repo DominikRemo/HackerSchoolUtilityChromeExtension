@@ -54,6 +54,36 @@ function deleteProgram(programId, row) {
     return promis
 }
 
+function updateDeleteSelectedState(tbody) {
+    const button = tbody.querySelector(".sandbox-delete-selected-button") 
+    const anyChecked = tbody.querySelector(".sandbox-checkbox:checked");
+    button.disabled = !anyChecked;
+}
+
+function enhanceRow(row, tbody) {
+    if (row.querySelector(".sandbox-checkbox")) return;
+
+    // Add row checkbox
+    const checkboxTd = document.createElement("td");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "sandbox-checkbox";
+    checkbox.addEventListener("change", () => updateDeleteSelectedState(tbody));
+    checkboxTd.appendChild(checkbox);
+    row.insertBefore(checkboxTd, row.firstChild);
+
+    // Add row delete button
+    const deleteTd = document.createElement("td");
+    const programId = row.getAttribute("data-program-id");
+    if ( programId != null) {
+        const deleteBtn = createDeleteButton(true, () => {
+            deleteProgram(programId, row);
+        })
+        deleteTd.appendChild(deleteBtn);
+    }
+    row.appendChild(deleteTd);
+}
+
 function setupTable(table) {
     if (table.dataset.enhanced === "true") return;
     table.dataset.enhanced = "true";
@@ -77,6 +107,7 @@ function setupTable(table) {
     selectAllTh.appendChild(selectAllCheckbox);
     headerRow.insertBefore(selectAllTh, headerRow.firstChild);
 
+    // Add Delete-Selected button
     const deleteSelectedButton = createDeleteButton(false, () => {
         const selected = tbody.querySelectorAll(".sandbox-checkbox:checked");
         const promisses = []
@@ -85,24 +116,18 @@ function setupTable(table) {
             if (!row) return;
             const id = row.getAttribute("data-program-id");
             if (!id) return;
-            promisses.push(deleteProgram(Number(id), row))
+            promisses.push(deleteProgram(id, row))
         });
         Promise.all(promisses).then( () => 
             window.location.reload()
         )
     });
-    deleteSelectedButton.classList.add("sandbox-delete-button");
+    deleteSelectedButton.classList.add("sandbox-delete-selected-button");
     deleteSelectedButton.disabled = true;
     const deleteTh = document.createElement("th");
     deleteTh.style.padding = "0.5rem";
     deleteTh.appendChild(deleteSelectedButton);
     headerRow.appendChild(deleteTh);
-
-    function updateDeleteSelectedState() {
-        if (!tbody) return;
-        const anyChecked = tbody.querySelector(".sandbox-checkbox:checked");
-        deleteSelectedButton.disabled = !anyChecked;
-    }
 
     selectAllCheckbox.addEventListener("change", (e) => {
         const checkboxes = tbody.querySelectorAll(".sandbox-checkbox");
@@ -111,69 +136,46 @@ function setupTable(table) {
         checkboxes.forEach((cb) => {
             cb.checked = target.checked;
         });
-        updateDeleteSelectedState();
+        updateDeleteSelectedState(tbody);
     });
-
-    function enhanceRow(row) {
-        if (row.querySelector(".sandbox-checkbox")) return;
-
-        // Add individual checkbox
-        const checkboxTd = document.createElement("td");
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.className = "sandbox-checkbox";
-        checkbox.addEventListener("change", updateDeleteSelectedState);
-        checkboxTd.appendChild(checkbox);
-        row.insertBefore(checkboxTd, row.firstChild);
-
-        // Add row delete button
-        const programId = row.getAttribute("data-program-id");
-        const deleteBtn = createDeleteButton(true, () => {
-            if (programId !== null) {
-                deleteProgram(Number(programId), row);
-            }
-        });
-        const deleteTd = document.createElement("td");
-        deleteTd.appendChild(deleteBtn);
-        row.appendChild(deleteTd);
-    }
 
     // Enhance all initial rows
     rows.forEach((row) => {
         if (row !== headerRow) {
-            enhanceRow(row);
+            enhanceRow(row, table);
         }
     });
 }
 
-// Main execution - Monitor DOM changes and setup tables when they appear
-(() => {
-    let lastContent = document.documentElement.innerHTML;
-    let debounceTimer;
-    const DEBOUNCE_DELAY_MS = 300;
+// main/setup
+// observer for indiviual tables to an add checkbox and delte button for new entries
+const tableObserver = new MutationObserver((mrl) => {
+    mrl.forEach((record) => {
+        record.addedNodes.forEach((e) => {
+            if (e.nodeName === "TR") enhanceRow(e, record.target)
+        })
+    })
+})
 
-    // Debounce function to avoid checking content too frequently
-    const scheduleContentCheck = () => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(checkAndSetupTables, DEBOUNCE_DELAY_MS);
-    };
-
-    // Observe DOM mutations and trigger debounced check
-    const observer = new MutationObserver(scheduleContentCheck);
-    observer.observe(document.documentElement, {
-        subtree: true,
-        childList: true,
-    });
-
-    // Check if page content changed and setup CodeHS tables if found
-    const checkAndSetupTables = () => {
-        let currentContent = document.documentElement.innerHTML;
-        if (currentContent !== lastContent) {
-            lastContent = currentContent;
-            // Setup bulk delete for both folder and program tables
-            ["sandbox-folder-table", "sandbox-program-table"].forEach((id) => {
-                onElementReady(id, (el) => setupTable(el));
-            });
+// observer for the whole DOM to see when the tables are loaded
+const DOMObserver = new MutationObserver((mrl) => {
+    mrl.forEach((record) => {
+        console.log(record)
+        if(record.target.classList.contains("num-programs")) { // best indicator I could find that works both for the main and folder views
+            document.querySelectorAll("table").forEach((table) => {
+                setupTable(table)
+                tableObserver.observe(table, {subtree: true, childList:true}) // could probably just be part of setupTable
+            })
         }
-    };
-})();
+    })
+})
+
+// edge case when you reload/start inside a folder
+// (for some reason the tables are immediatly part of the DOM and aren't loaded aferwards, like in the main view)
+if (document.querySelector("table"))
+    document.querySelectorAll("table").forEach((table) => {
+        setupTable(table)
+        tableObserver.observe(table, {subtree: true, childList:true})
+    })
+
+DOMObserver.observe(document, {childList:true, subtree:true})
