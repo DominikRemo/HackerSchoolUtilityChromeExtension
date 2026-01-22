@@ -14,12 +14,19 @@ function onElementReady(id, callback, interval = 100, timeout = 10000) {
     }, interval);
 }
 
-function createDeleteButton(text = "Delete", onClick) {
+function createDeleteButton(simple, onClick) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "btn btn-danger btn-sm";
     button.style.float = "right";
-    button.innerHTML = `<span class="icon-trash"></span> ${text}`;
+    const spanIcon = document.createElement("span")
+    spanIcon.className= "icon-trash"
+    button.append(spanIcon)
+    if (!simple) {
+        const spanText = document.createElement("span")
+        spanText.textContent = " Delete selected"
+        button.append(spanText)
+    }
     button.addEventListener("click", (e) => {
         e.preventDefault();
         onClick();
@@ -35,7 +42,7 @@ function getCSRFToken() {
 }
 
 function deleteProgram(programId, row) {
-    fetch("https://codehs.com/library/ajax/delete_sandbox", {
+    const promis = fetch("https://codehs.com/library/ajax/delete_sandbox", {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -44,6 +51,7 @@ function deleteProgram(programId, row) {
         body: `program=${programId}&method=delete_sandbox`,
     });
     row.remove();
+    return promis
 }
 
 function setupTable(table) {
@@ -69,15 +77,19 @@ function setupTable(table) {
     selectAllTh.appendChild(selectAllCheckbox);
     headerRow.insertBefore(selectAllTh, headerRow.firstChild);
 
-    const deleteSelectedButton = createDeleteButton("Delete Selected", () => {
+    const deleteSelectedButton = createDeleteButton(false, () => {
         const selected = tbody.querySelectorAll(".sandbox-checkbox:checked");
+        const promisses = []
         selected.forEach((checkbox) => {
             const row = checkbox.closest("tr");
             if (!row) return;
             const id = row.getAttribute("data-program-id");
             if (!id) return;
-            deleteProgram(Number(id), row);
+            promisses.push(deleteProgram(Number(id), row))
         });
+        Promise.all(promisses).then( () => 
+            window.location.reload()
+        )
     });
     deleteSelectedButton.classList.add("sandbox-delete-button");
     deleteSelectedButton.disabled = true;
@@ -116,7 +128,7 @@ function setupTable(table) {
 
         // Add row delete button
         const programId = row.getAttribute("data-program-id");
-        const deleteBtn = createDeleteButton("Delete", () => {
+        const deleteBtn = createDeleteButton(true, () => {
             if (programId !== null) {
                 deleteProgram(Number(programId), row);
             }
