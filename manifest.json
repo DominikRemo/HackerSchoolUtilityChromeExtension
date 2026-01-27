@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "HackerSchool Utils",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Utility Browser Extension für die Hacker School - Bulk Delete für CodeHS",
   "homepage_url": "https://github.com/DominikRemo/HackerSchoolUtilityChromeExtension/blob/main/manifest.json",
 
