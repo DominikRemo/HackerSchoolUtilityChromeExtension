@@ -160,7 +160,6 @@ const tableObserver = new MutationObserver((mrl) => {
 // observer for the whole DOM to see when the tables are loaded
 const DOMObserver = new MutationObserver((mrl) => {
     mrl.forEach((record) => {
-        console.log(record)
         if(record.target.classList.contains("num-programs")) { // best indicator I could find that works both for the main and folder views
             document.querySelectorAll("table").forEach((table) => {
                 setupTable(table)
