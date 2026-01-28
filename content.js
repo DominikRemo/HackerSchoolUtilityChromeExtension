@@ -1,19 +1,5 @@
 // Content script for CodeHS bulk delete functionality
 
-function onElementReady(id, callback, interval = 100, timeout = 10000) {
-    const end = Date.now() + timeout;
-    const timer = setInterval(() => {
-        const el = document.getElementById(id);
-        if (el) {
-            clearInterval(timer);
-            callback(el);
-        } else if (Date.now() > end) {
-            clearInterval(timer);
-            console.warn(`#${id} not found in time`);
-        }
-    }, interval);
-}
-
 function createDeleteButton(simple, onClick) {
     const button = document.createElement("button");
     button.type = "button";
@@ -160,7 +146,6 @@ const tableObserver = new MutationObserver((mrl) => {
 // observer for the whole DOM to see when the tables are loaded
 const DOMObserver = new MutationObserver((mrl) => {
     mrl.forEach((record) => {
-        console.log(record)
         if(record.target.classList.contains("num-programs")) { // best indicator I could find that works both for the main and folder views
             document.querySelectorAll("table").forEach((table) => {
                 setupTable(table)
